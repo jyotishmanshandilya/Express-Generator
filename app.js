@@ -33,6 +33,16 @@ connect.then((db)=>{
 
 var app = express();
 
+app.all('*', (req, res, next)=>{
+  if(req.secure){
+    return next();
+  }
+  else{
+    res.redirect(307, 'https://'+ req.hostname+ ":"+ app.get('secPort')+ req.url);
+  }
+})
+
+
 app.use(session({
   resave: false, 
   saveUninitialized: false,
@@ -75,7 +85,7 @@ app.use(function(err, req, res, next) {
   res.locals.error = req.app.get('env') === 'development' ? err : {};
 
   // render the error page
-  res.status(err.status || 500);
+  res.statusCode = err.status || 500;
   res.render('error');
 });
 

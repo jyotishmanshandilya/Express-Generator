@@ -8,8 +8,28 @@ var authenticate = require('../authenticate');
 router.use(bodyParser.json());
 
 /* GET users listing. */
-router.get('/', function(req, res, next) {
-  res.send('respond with a resource');
+router.get('/', authenticate.verifyUser, authenticate.verifyAdmin, (req, res)=> {
+  // var adminStatus = authenticate.verifyAdmin({admin: req.user.admin});
+  // if(err){
+  //   res.statusCode = 500;
+  //   res.setHeader('Content-Type', 'application/json');
+  //   res.json({err:err});
+  // }
+  // else if(adminStatus){
+  //   res.json({msg: 'hello admin'});
+  // }
+  // else{
+  //   res.json({msg: "not an admin"});
+  // }
+  User.find({}, (err, users) => {
+    if (err) {
+      return next(err);
+    } else {
+      res.statusCode = 200;
+      res.setHeader('Content_type', 'application/json');
+      res.json(users);
+    }
+  });
 });
 
 router.post('/signup', function(req,res,next){
@@ -21,11 +41,23 @@ router.post('/signup', function(req,res,next){
       res.json({err:err});
     }
     else{
-      passport.authenticate('local')(req, res, ()=>{
-        res.statusCode = 200;
-        res.setHeader('Content-Type', 'application/json');
-        res.json({success: true, status: "Registration successful!"});
-
+      if(req.body.firstname){
+        user.firstname = req.body.firstname;
+      }
+      if(req.body.lastname){
+        user.lastname = req.body.lastname;
+      }
+      user.save((err, user)=>{
+        if(err){
+          res.statusCode = 500;
+          res.setHeader('Content-Type', 'application/json');
+          res.json({err:err});
+        }
+        passport.authenticate('local')(req, res, ()=>{
+          res.statusCode = 200;
+          res.setHeader('Content-Type', 'application/json');
+          res.json({success: true, status: "Registration successful!"});
+        });
       });
     }
   })
